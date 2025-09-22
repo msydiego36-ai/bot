@@ -2577,7 +2577,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 // --- Start bot ---
-client.login(token).catch(err => console.error('Login failed:', err));
+client.login(process.env.TOKEN);
 
 // Cloud hosting optimizations
 process.on('unhandledRejection', (reason, promise) => {
@@ -2606,4 +2606,5 @@ process.on('SIGTERM', () => {
 module.exports = {
   generateAIResponse,
   clearUserMemory,
+
 };
