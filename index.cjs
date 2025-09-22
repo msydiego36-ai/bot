@@ -9,6 +9,30 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Add after require('dotenv').config();
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Lightweight web server so Render's port check passes
+app.get('/', (_req, res) => res.send('Glimmer Cafe bot is running.'));
+app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
+app.listen(PORT, () => console.log(`HTTP server listening on ${PORT} (Render port binding)`));
+
+// OpenAI client (optional: only used if key provided)
+let openai = null;
+try {
+  const OpenAI = require('openai');
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    console.log('OpenAI enabled.');
+  } else {
+    console.log('OPENAI_API_KEY not set — using built-in simple responses.');
+  }
+} catch (e) {
+  console.log('openai package not installed; using simple responses.');
+}
+
 // --- ENV / Config ---
 const token = process.env.DISCORD_TOKEN;
 const guildId = process.env.GUILD_ID;
@@ -316,68 +340,62 @@ function getHighestMinigameRole(user) {
 // Note: userMemories are now stored in the database for cloud hosting compatibility
 
 async function generateAIResponse(userId, message, guildId) {
-  // Input validation
   if (!userId || !message || !guildId) {
     console.error('Invalid parameters for generateAIResponse:', { userId, message, guildId });
     return "Sorry, I'm having trouble understanding your request. Please try again! ☕";
   }
-  
-  // Sanitize message length
-  if (message.length > 1000) {
-    message = message.substring(0, 1000) + "...";
-  }
-  
-  // Get user data and ensure AI memory exists
+
+  // Length guard
+  if (message.length > 2000) message = message.slice(0, 2000);
+
   const u = ensureUser(guildId, userId);
-  if (!u.aiMemory) {
-    u.aiMemory = [];
-  }
-  
-  const userMemory = u.aiMemory;
-  
-  // Add user message to memory
-  userMemory.push({ role: 'user', content: message });
-  
-  // Keep only last 10 messages to prevent memory overflow
-  if (userMemory.length > 10) {
-    userMemory.splice(0, userMemory.length - 10);
-  }
-  
-  // Save memory to database
+  u.aiMemory = Array.isArray(u.aiMemory) ? u.aiMemory : [];
+
+  // Keep memory compact
+  const maxTurns = 10;
+  const systemPrompt = "You are Glimmer, a friendly AI barista in the Glimmer Cafe Discord. Be concise, warm, and pony-themed when appropriate. Help with cafe commands (/menu, /game, /daily, /points), light MLP trivia, and general chat. Avoid NSFW and personal data. Keep replies under ~120 words.";
+
+  // Push user message
+  u.aiMemory.push({ role: 'user', content: message });
+  if (u.aiMemory.length > maxTurns) u.aiMemory.splice(0, u.aiMemory.length - maxTurns);
   saveDb();
-  
-  // Create system prompt for Glimmer AI
-  const systemPrompt = `You are Glimmer, a friendly AI assistant from the Glimmer Cafe Discord server. You're knowledgeable about My Little Pony: Friendship is Magic and love helping users with questions about the show, the cafe, minigames, and general chat. You're cheerful, helpful, and use pony-themed language occasionally. Keep responses concise but friendly.`;
-  
-  // Create messages array for API call
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...userMemory.slice(-8) // Include last 8 messages for context
-  ];
-  
+
   try {
-    // For now, we'll use a simple response system since we don't have an AI API key
-    // In a real implementation, you'd call an AI API like OpenAI here
-    const response = generateSimpleResponse(message, userMemory);
-    
-    // Add AI response to memory
-    userMemory.push({ role: 'assistant', content: response });
-    
-    // Save updated memory to database
+    // Use OpenAI if configured
+    if (openai) {
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        ...u.aiMemory.slice(-maxTurns)
+      ];
+
+      // gpt-4o-mini is fast/cost-effective; adjust if you prefer
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.7,
+        max_tokens: 300
+      });
+
+      const reply = completion.choices?.[0]?.message?.content?.trim() || "I'm a bit speechless—mind asking that another way?";
+      // Save assistant reply to memory
+      u.aiMemory.push({ role: 'assistant', content: reply });
+      if (u.aiMemory.length > maxTurns) u.aiMemory.splice(0, u.aiMemory.length - maxTurns);
+      saveDb();
+      return reply;
+    }
+
+    // Fallback: your existing rule-based generator
+    const response = generateSimpleResponse(message, u.aiMemory);
+    u.aiMemory.push({ role: 'assistant', content: response });
+    if (u.aiMemory.length > maxTurns) u.aiMemory.splice(0, u.aiMemory.length - maxTurns);
     saveDb();
-    
     return response;
   } catch (error) {
     console.error('AI Response generation error:', error);
-    // Log additional details for cloud debugging
-    console.error('Error details:', {
-      userId,
-      guildId,
-      messageLength: message.length,
-      memoryLength: userMemory.length,
-      error: error.message
-    });
-    return "Sorry, I'm having trouble thinking right now. Maybe try again later! ☕";
+    const response = generateSimpleResponse(message, u.aiMemory);
+    u.aiMemory.push({ role: 'assistant', content: response });
+    saveDb();
+    return response;
   }
 }
 
@@ -2608,3 +2626,4 @@ module.exports = {
   clearUserMemory,
 
 };
+
