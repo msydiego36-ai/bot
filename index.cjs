@@ -188,7 +188,7 @@ async function applyLevelRewards(member, prevLevel, newLevel) {
       }
     }
   }
-
+}
 async function ensureFirstMessageRoles(member) {
   // Roles to grant on first message
   const initialRoles = [
@@ -2632,11 +2632,12 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-// Export functions for testing
-module.exports = {
-  generateAIResponse,
-  clearUserMemory,
+// Periodic database save (every minute)
+setInterval(() => {
+  saveDb();
+}, 60_000);
 
-};
+// End of index.cjs
 
-
+// --- Discord bot for Glimmer Cafe ---
+// Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
