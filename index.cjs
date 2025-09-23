@@ -137,10 +137,10 @@ const streakRoleRewards = {
 // --- Minigame winner roles (based on total wins) ---
 const winnerRoleRewards = {
   1:  'Game Initiate',
-  5:  'Quiz Connoisseur',
-  10: 'Arcade Aficionado',
-  25: 'Friendship Champion',
-  50: 'Equestrian Legend',
+  10:  'Quiz Connoisseur',
+  25: 'Arcade Aficionado',
+  50: 'Friendship Champion',
+  100: 'Equestrian Legend',
 };
 
 // --- Minigame-specific role rewards ---
@@ -189,29 +189,35 @@ async function applyLevelRewards(member, prevLevel, newLevel) {
     }
   }
 
-  // Also grant separator roles and Member upon first reaching level 1
-  if (prevLevel < 1 && newLevel >= 1) {
-    const separatorRoleNames = [
+async function ensureFirstMessageRoles(member) {
+  // Roles to grant on first message
+  const initialRoles = [
+    "Member",
       "ㅤㅤㅤㅤㅤㅤㅤㅤㅤFAVORITE PONYㅤㅤㅤㅤㅤㅤㅤㅤ",
       "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤRANKSㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
       "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤRACEㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
       "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤPINGㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
       "ㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ㅤVANITYㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-      "Member",
-    ];
-    for (const roleName of separatorRoleNames) {
-      try {
-        const role = member.guild.roles.cache.find(r => r.name === roleName)
-          || await member.guild.roles.fetch().then(col => col.find(r => r.name === roleName)).catch(() => null);
-        if (role && !member.roles.cache.has(role.id)) {
-          await member.roles.add(role, 'Reached level 1');
-        } else if (!role) {
-          console.log(`Role not found: "${roleName}" — make sure it exists and bot is above it.`);
-        }
-      } catch (e) {
-        console.log('Role add failed:', e.message);
+    PLACEHOLDER_ROLE // your activity placeholder
+  ];
+
+  // Only act once per user: mark in db
+  const u = ensureUser(member.guild.id, member.id);
+  if (u._firstMessageRolesGranted) return;
+
+  try {
+    // Try to find each role by name and add if missing
+    for (const name of initialRoles) {
+      const role = member.guild.roles.cache.find(r => r.name === name)
+        || await member.guild.roles.fetch().then(col => col.find(r => r.name === name)).catch(() => null);
+      if (role && !member.roles.cache.has(role.id)) {
+        await member.roles.add(role, 'First message in server');
       }
     }
+    u._firstMessageRolesGranted = true;
+    saveDb();
+  } catch (e) {
+    console.log('ensureFirstMessageRoles error:', e?.message || e);
   }
 }
 
@@ -939,6 +945,12 @@ client.on(Events.MessageCreate, async (msg) => {
   if (!msg.guild || msg.author.bot) return;
   if (guildId && msg.guild.id !== guildId) return;
 
+  // Grant Member + placeholders on the user's first message
+  try {
+    const member = msg.member || await msg.guild.members.fetch(msg.author.id);
+    await ensureFirstMessageRoles(member);
+  } catch (_) {}
+  
   // Arcane level-up listener (in #levels channel)
   if (msg.channel.id === levelsChannelId && msg.author.bot && msg.author.id !== client.user.id) {
     // Look for Arcane level-up messages (common patterns)
@@ -2626,4 +2638,5 @@ module.exports = {
   clearUserMemory,
 
 };
+
 
