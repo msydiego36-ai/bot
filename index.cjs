@@ -90,10 +90,6 @@ const DAY = 24 * 60 * 60 * 1000;
 const dailyUtcOffsetMinutes = parseInt(process.env.DAILY_UTC_OFFSET_MINUTES || '0', 10);
 const dayIndexDaily = (ms) => Math.floor((ms + dailyUtcOffsetMinutes * 60_000) / DAY);
 
-function hasGenerosityRole(member) {
-  return member?.roles?.cache?.some(r => r.name === 'Element of Generosity') || false;
-}
-
 function parseDurationToMs(text) {
   if (!text) return null;
   const match = String(text).trim().match(/^(\d+)(s|m|h|d)$/i);
@@ -103,27 +99,6 @@ function parseDurationToMs(text) {
   const units = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
   return value * units[unit];
 }
-
-// --- Role rewards by name (Arcane levels) ---
-const roleRewards = {
-  1:  'Member',
-  3:  'New Patron',
-  5:  'Sugarcube Sipper',
-  10: 'Cocoa Companion',
-  15: 'Latte Luminary',
-  20: 'Pancake Paladin',
-  25: 'Caramel Conjurer',
-  30: 'Mocha Maestro',
-  35: 'Crystal Creamer',
-  40: 'Harmony Brewer',
-  45: 'Starlight Barista',
-  50: 'Aurora Artisan',
-  60: 'Prism Pâtissier',
-  70: 'Moonbeam Maitre d\'',
-  80: 'Sunlit Sommelier',
-  90: 'Enchanted Espresso',
-  100: 'Celestial Connoisseur',
-};
 
 // --- Streak milestone roles ---
 const streakRoleRewards = {
@@ -173,7 +148,6 @@ const minigameRoleRewards = {
 };
 
 // --- Placeholder role for activity ---
-const PLACEHOLDER_ROLE = 'ㅤㅤㅤㅤㅤㅤㅤㅤSTREAK/MINIGAMEㅤㅤㅤㅤㅤㅤㅤ';
 async function applyLevelRewards(member, prevLevel, newLevel) {
   const thresholds = Object.keys(roleRewards).map(n => parseInt(n, 10)).sort((a,b)=>a-b);
   for (const L of thresholds) {
@@ -192,12 +166,7 @@ async function applyLevelRewards(member, prevLevel, newLevel) {
 async function ensureFirstMessageRoles(member) {
   // Roles to grant on first message
   const initialRoles = [
-    "Member",
-      "ㅤㅤㅤㅤㅤㅤㅤㅤㅤFAVORITE PONYㅤㅤㅤㅤㅤㅤㅤㅤ",
-      "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤRANKSㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-      "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤRACEㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-      "ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤPINGㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-      "ㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ㅤVANITYㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    "Member"
     PLACEHOLDER_ROLE // your activity placeholder
   ];
 
@@ -262,10 +231,10 @@ async function awardPoints(guild, userId, gameKey) {
   // Award points based on game type
   const pointValues = {
     snack: 10,
-    cider: 15,
-    trivia: 12,
-    jumble: 8,
-    heist: 20
+    cider: 10,
+    trivia: 10,
+    jumble: 10,
+    heist: 10
   };
   
   const points = pointValues[gameKey] || 10;
@@ -301,20 +270,6 @@ async function applyMinigameRoleRewards(member, gameKey, currentWins) {
         console.log(`Minigame role not found: "${roleName}" — create it and make sure the bot's role is above it.`);
       }
     }
-  }
-}
-
-async function grantPlaceholderRole(member) {
-  try {
-    const role = member.guild.roles.cache.find(r => r.name === PLACEHOLDER_ROLE)
-      || await member.guild.roles.fetch().then(col => col.find(r => r.name === PLACEHOLDER_ROLE)).catch(() => null);
-    if (role && !member.roles.cache.has(role.id)) {
-      await member.roles.add(role, 'Active in minigames or daily streak').catch(e => console.log('Placeholder role add failed:', e.message));
-    } else if (!role) {
-      console.log(`Placeholder role not found: "${PLACEHOLDER_ROLE}" — create it and make sure the bot's role is above it.`);
-    }
-  } catch (e) {
-    console.log('grantPlaceholderRole error:', e?.message || e);
   }
 }
 
@@ -2641,3 +2596,4 @@ setInterval(() => {
 
 // --- Discord bot for Glimmer Cafe ---
 // Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
+
