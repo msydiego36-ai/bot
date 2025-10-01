@@ -167,7 +167,6 @@ async function ensureFirstMessageRoles(member) {
   // Roles to grant on first message
   const initialRoles = [
     "Member"
-    PLACEHOLDER_ROLE // your activity placeholder
   ];
 
   // Only act once per user: mark in db
@@ -2605,6 +2604,7 @@ setInterval(() => {
 
 // --- Discord bot for Glimmer Cafe ---
 // Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
+
 
 
 
