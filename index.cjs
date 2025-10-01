@@ -948,13 +948,13 @@ client.on(Events.MessageCreate, async (msg) => {
   try {
     const lower = msg.content.toLowerCase();
     // "artie" summon
-    if (lower.includes('artie')) {
+    if (lower.includes('@artie')) {
       msg.channel.send('The Artie has been summoned!').catch(() => {});
     }
 
     // React to any text containing "boop" (words, emojis, anywhere in the message)
     if (/boop/i.test(msg.content)) {
-      const boopEmoji = msg.guild.emojis?.cache?.find(e => e.name?.toLowerCase() === 'glimboop');
+      const boopEmoji = msg.guild.emojis?.cache?.find(e => e.name?.toLowerCase() === 'glimbooping');
       if (boopEmoji) msg.react(boopEmoji).catch(() => {});
     }
 
@@ -967,7 +967,18 @@ client.on(Events.MessageCreate, async (msg) => {
       msg.channel.send('Nah, just muffins. All hail Derpy Hooves!').catch(() => {});
     }
     if (lower.includes('twinkie winkie')) {
-      msg.channel.send("Twinkie winkie my cutie, you're the best! :purple_heart:").catch(() => {});
+      msg.channel.send("Twinkie winkie, you're the best! :purple_heart:").catch(() => {});
+    }
+  } catch (_) {}
+
+    if (lower.includes('fuck')) {
+      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
+    }
+    if (lower.includes('shit')) {
+      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
+    }
+    if (lower.includes('bitch')) {
+      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
     }
   } catch (_) {}
 
@@ -2596,4 +2607,5 @@ setInterval(() => {
 
 // --- Discord bot for Glimmer Cafe ---
 // Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
+
 
