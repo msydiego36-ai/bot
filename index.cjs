@@ -969,8 +969,6 @@ client.on(Events.MessageCreate, async (msg) => {
     if (lower.includes('twinkie winkie')) {
       msg.channel.send("Twinkie winkie, you're the best! :purple_heart:").catch(() => {});
     }
-  } catch (_) {}
-
     if (lower.includes('fuck')) {
       msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
     }
@@ -2607,5 +2605,6 @@ setInterval(() => {
 
 // --- Discord bot for Glimmer Cafe ---
 // Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
+
 
 
