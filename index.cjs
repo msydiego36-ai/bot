@@ -968,14 +968,14 @@ client.on(Events.MessageCreate, async (msg) => {
     if (lower.includes('twinkie winkie')) {
       msg.channel.send("Twinkie winkie, you're the best! :purple_heart:").catch(() => {});
     }
-    if (lower.includes('fuck')) {
-      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
+    if (lower.includes('good morning')) {
+      msg.channel.send("Good morning, rise and shine! :glimwave:").catch(() => {});
     }
-    if (lower.includes('shit')) {
-      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
+    if (lower.includes('goodnight')) {
+      msg.channel.send("Rest well, sweet dreams ^^ :glimsleep:").catch(() => {});
     }
-    if (lower.includes('bitch')) {
-      msg.channel.send("Let's be friendly, please mind your words!").catch(() => {});
+    if (lower.includes('good night')) {
+      msg.channel.send("Rest well, sweet dreams ^^ :glimsleep:").catch(() => {});
     }
   } catch (_) {}
 
@@ -2604,6 +2604,7 @@ setInterval(() => {
 
 // --- Discord bot for Glimmer Cafe ---
 // Features: daily streaks, pony-themed minigames, AI chat, birthdays, points & roles
+
 
 
 
